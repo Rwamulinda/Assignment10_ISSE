@@ -114,18 +114,14 @@ static void _CD_rehash(CDict dict)
 // Documented in .h file
 CDict CD_new()
 {
-
-  //
-  // TODO: Add your code here
-    CDict dict = malloc(sizeof(struct _dictionary));
-    dict->capacity = DEFAULT_DICT_CAPACITY;
-    dict->num_stored = 0;
-    dict->num_deleted = 0;
-    dict->slot = calloc(dict->capacity, sizeof(struct _hash_slot));
-    return dict;
-
-  //
+  CDict dict = malloc(sizeof(struct _dictionary));
+  dict->capacity = DEFAULT_DICT_CAPACITY;
+  dict->num_stored = 0;
+  dict->num_deleted = 0;
+  dict->slot = calloc(dict->capacity, sizeof(struct _hash_slot));
+  return dict;
 }
+
 
 
 // Documented in .h file
