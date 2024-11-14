@@ -123,11 +123,14 @@ static void _CD_rehash(CDict dict)
 
     // Step 3: Update the original dictionary to the new dictionary's state
     free(dict->slot);  // Free the old slots array
-    *dict = *new_dict;  // Copy the contents of the new dictionary into the old dictionary
+    dict->num_deleted = 0;  // Copy the contents of the new dictionary into the old dictionary
+    dict->num_stored = new_dict->num_stored;  
+    dict->slot = new_dict->slot;
+    new_dict->slot = NULL;  
 
+    
     // Step 4: Free the memory for the new dictionary
-    free(new_dict->slot);
-    free(new_dict);
+    CD_free(new_dict);
 }
 
 
