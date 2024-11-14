@@ -201,7 +201,7 @@ unsigned int CD_size(CDict dict)
 // documented in .h file
 unsigned int CD_capacity(CDict dict)
 {
-
+   assert(dict);
   //
   // TODO: Add your code here
     return dict->capacity;
@@ -212,7 +212,8 @@ unsigned int CD_capacity(CDict dict)
 // Documented in .h file
 bool CD_contains(CDict dict, CDictKeyType key)
 {
-  assert(dict && key);
+  assert(dict);
+  assert(key);
   //
   // TODO: Add your code here
     
