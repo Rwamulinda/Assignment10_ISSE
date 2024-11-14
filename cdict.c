@@ -88,26 +88,38 @@ static void _CD_rehash(CDict dict)
     //
     // TODO: Add your code here
 
-    // Save old slots and capacity
-    unsigned int old_capacity = dict->capacity;
-    struct _hash_slot *old_slots = dict->slot;
+    unsigned int new_capacity = dict->capacity * 2;
+    struct _hash_slot *new_slots = malloc(new_capacity * sizeof(struct _hash_slot));
+    if (new_slots == NULL) return;  // Handle allocation failure
 
-    // Double the capacity and reset counters
-    dict->capacity *= 2;
-    dict->num_stored = 0;
-    dict->num_deleted = 0;
-    dict->slot = calloc(dict->capacity, sizeof(struct _hash_slot));
+    // Initialize new slots
+    for (unsigned int i = 0; i < new_capacity; i++) {
+        new_slots[i].status = SLOT_UNUSED;
+        new_slots[i].key = NULL;
+        new_slots[i].value = NULL;
+    }
 
-    // Rehash each slot
-    for (unsigned int i = 0; i < old_capacity; i++) {
-        if (old_slots[i].status == SLOT_IN_USE) {
-            CD_store(dict, old_slots[i].key, old_slots[i].value);
+    // Rehash existing entries into the new slots
+    for (unsigned int i = 0; i < dict->capacity; i++) {
+        if (dict->slot[i].status == SLOT_IN_USE) {
+            CDictKeyType key = dict->slot[i].key;
+            CDictValueType value = dict->slot[i].value;
+            // Insert key-value pair into new_slots with the rehashed position
+            unsigned int new_index = _CD_hash(key, new_capacity);
+            while (new_slots[new_index].status == SLOT_IN_USE) {
+                new_index = (new_index + 1) % new_capacity; // Linear probing
+            }
+            new_slots[new_index].status = SLOT_IN_USE;
+            new_slots[new_index].key = key;
+            new_slots[new_index].value = value;
         }
     }
 
-    // Free old slots memory
-    free(old_slots);
-  //
+    // Free old slots and update dictionary
+    free(dict->slot);
+    dict->slot = new_slots;
+    dict->capacity = new_capacity;
+    dict->num_deleted = 0;  // Reset deleted count after rehash
 }
 
 
@@ -115,10 +127,24 @@ static void _CD_rehash(CDict dict)
 CDict CD_new()
 {
   CDict dict = malloc(sizeof(struct _dictionary));
-  dict->capacity = DEFAULT_DICT_CAPACITY;
+  if (dict == NULL) return NULL;
+
   dict->num_stored = 0;
   dict->num_deleted = 0;
-  dict->slot = calloc(dict->capacity, sizeof(struct _hash_slot));
+  dict->capacity = DEFAULT_DICT_CAPACITY;
+  dict->slot = malloc(DEFAULT_DICT_CAPACITY * sizeof(struct _hash_slot));
+  if (dict->slot == NULL) {
+      free(dict);
+      return NULL;  // Handle allocation failure
+  }
+
+    // Initialize each slot in the dictionary
+  for (unsigned int i = 0; i < DEFAULT_DICT_CAPACITY; i++) {
+      dict->slot[i].status = SLOT_UNUSED;
+      dict->slot[i].key =" ";
+      dict->slot[i].value =" ";
+  }
+ 
   return dict;
 }
 
@@ -131,9 +157,9 @@ void CD_free(CDict dict)
   //
   // TODO: Add your code here
 
-    if (dict) {
-      free(dict->slot);
-      free(dict);
+    if (dict != NULL) {
+        free(dict->slot);
+        free(dict);
     }
   //
 }
@@ -177,17 +203,21 @@ bool CD_contains(CDict dict, CDictKeyType key)
 
   //
   // TODO: Add your code here
-    unsigned int hash = _CD_hash(key, dict->capacity);
-    for (unsigned int i = 0; i < dict->capacity; i++) {
-        unsigned int idx = (hash + i) % dict->capacity;
-        if (dict->slot[idx].status == SLOT_UNUSED) {
+    
+   assert(dict && key);
+   unsigned int index = _CD_hash(key, dict->capacity);
+
+   for (unsigned int i = 0; i < dict->capacity; i++) {
+        unsigned int probe_index = (index + i) % dict->capacity;
+        if (dict->slot[probe_index].status == SLOT_UNUSED) {
             return false;
         }
-        if (dict->slot[idx].status == SLOT_IN_USE && strcmp(dict->slot[idx].key, key) == 0) {
+        if (dict->slot[probe_index].status == SLOT_IN_USE &&
+            strcmp(dict->slot[probe_index].key, key) == 0) {
             return true;
         }
     }
-    return false;
+    return false; 
   //
 }
 
@@ -201,28 +231,28 @@ void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
     assert(value);
 
     // Check if rehash is needed
-    if (CD_load_factor(dict) >= REHASH_THRESHOLD) {
+    if (CD_load_factor(dict) > REHASH_THRESHOLD) {
         _CD_rehash(dict);
     }
 
-    unsigned int hash = _CD_hash(key, dict->capacity);
+    unsigned int index = _CD_hash(key, dict->capacity);
 
-    // Attempt to find an available slot or update an existing key
     for (unsigned int i = 0; i < dict->capacity; i++) {
-        unsigned int idx = (hash + i) % dict->capacity;
+        unsigned int probe_index = (index + i) % dict->capacity;
 
-        // If slot is in use with the same key, overwrite the value
-        if (dict->slot[idx].status == SLOT_IN_USE && strcmp(dict->slot[idx].key, key) == 0) {
-            dict->slot[idx].value = value;
+        if (dict->slot[probe_index].status == SLOT_UNUSED || 
+            dict->slot[probe_index].status == SLOT_DELETED) {
+
+            dict->slot[probe_index].status = SLOT_IN_USE;
+            dict->slot[probe_index].key = key;
+            dict->slot[probe_index].value = value;
+            dict->num_stored++;
             return;
         }
 
-        // Use an empty or deleted slot for new entry
-        if (dict->slot[idx].status != SLOT_IN_USE) {
-            dict->slot[idx].status = SLOT_IN_USE;
-            dict->slot[idx].key = key;
-            dict->slot[idx].value = value;
-            dict->num_stored++;
+        if (dict->slot[probe_index].status == SLOT_IN_USE &&
+            strcmp(dict->slot[probe_index].key, key) == 0) {
+            dict->slot[probe_index].value = value;
             return;
         }
     }
@@ -235,21 +265,19 @@ CDictValueType CD_retrieve(CDict dict, CDictKeyType key)
     assert(dict);
     assert(key);
 
-    unsigned int hash = _CD_hash(key, dict->capacity);
+    unsigned int index = _CD_hash(key, dict->capacity);
 
-    // Search for the key in the table
     for (unsigned int i = 0; i < dict->capacity; i++) {
-        unsigned int idx = (hash + i) % dict->capacity;
-
-        if (dict->slot[idx].status == SLOT_UNUSED) {
-            return INVALID_VALUE; // Key not found
+        unsigned int probe_index = (index + i) % dict->capacity;
+        if (dict->slot[probe_index].status == SLOT_UNUSED) {
+            return INVALID_VALUE;
         }
-
-        if (dict->slot[idx].status == SLOT_IN_USE && strcmp(dict->slot[idx].key, key) == 0) {
-            return dict->slot[idx].value; // Key found
+        if (dict->slot[probe_index].status == SLOT_IN_USE &&
+            strcmp(dict->slot[probe_index].key, key) == 0) {
+            return dict->slot[probe_index].value;
         }
     }
-    return INVALID_VALUE; // Key not found
+    return INVALID_VALUE;
 }
 
 
@@ -259,21 +287,21 @@ void CD_delete(CDict dict, CDictKeyType key)
     assert(dict);
     assert(key);
 
-    unsigned int hash = _CD_hash(key, dict->capacity);
+    unsigned int index = _CD_hash(key, dict->capacity);
 
-    // Locate the key to delete
     for (unsigned int i = 0; i < dict->capacity; i++) {
-        unsigned int idx = (hash + i) % dict->capacity;
-
-        if (dict->slot[idx].status == SLOT_UNUSED) {
-            return; // Key not found
+        unsigned int probe_index = (index + i) % dict->capacity;
+        if (dict->slot[probe_index].status == SLOT_UNUSED) {
+            return;  // Key not found
         }
-
-        if (dict->slot[idx].status == SLOT_IN_USE && strcmp(dict->slot[idx].key, key) == 0) {
-            dict->slot[idx].status = SLOT_DELETED;
+        if (dict->slot[probe_index].status == SLOT_IN_USE &&
+            strcmp(dict->slot[probe_index].key, key) == 0) {
+            dict->slot[probe_index].status = SLOT_DELETED;
+            dict->slot[probe_index].key = NULL;
+            dict->slot[probe_index].value = NULL;
             dict->num_stored--;
             dict->num_deleted++;
-            return; // Key deleted
+            return;
         }
     }
 }
@@ -284,7 +312,7 @@ double CD_load_factor(CDict dict)
 {
     assert(dict);
 
-    return (double)(dict->num_stored) / dict->capacity;
+    return (double)(dict->num_stored + dict->num_deleted) / dict->capacity;
 }
 
 
@@ -295,13 +323,12 @@ void CD_print(CDict dict)
 
     for (unsigned int i = 0; i < dict->capacity; i++) {
         printf("Slot %u: ", i);
-        
         if (dict->slot[i].status == SLOT_UNUSED) {
             printf("UNUSED\n");
         } else if (dict->slot[i].status == SLOT_DELETED) {
             printf("DELETED\n");
         } else if (dict->slot[i].status == SLOT_IN_USE) {
-            printf("Key: %s, Value: %s\n", dict->slot[i].key, dict->slot[i].value);
+            printf("IN USE (Key: %s, Value: %s)\n", dict->slot[i].key, dict->slot[i].value);
         }
     }
 }
