@@ -151,8 +151,11 @@ void CD_free(CDict dict)
   assert(dict);
   //
   // TODO: Add your code here
+  if (dict != NULL) {
   free(dict->slot);
   free(dict);
+
+  }
   //
 }
 
@@ -227,7 +230,7 @@ void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
   // TODO: Add your code here
 
   if (CD_load_factor(dict) > REHASH_THRESHOLD) {
-        CD_rehash(dict);
+        _CD_rehash(dict);
   }
 
     // Insert the new key-value pair
