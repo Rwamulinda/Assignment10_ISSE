@@ -169,12 +169,12 @@ void CD_free(CDict dict)
   //
   // TODO: Add your code here
 
-    if (dict != NULL) {
+    //if (dict != NULL) {
         free(dict->slot);
         free(dict);
     }
   //
-}
+//}
 
 
 // documented in .h file
