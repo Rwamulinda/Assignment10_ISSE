@@ -101,7 +101,7 @@ int test_print() {
     CD_free(dict);
     return 1;
 
-test_error:
+   test_error:
     return 0;
 }
 int test_load_factor() {
@@ -112,7 +112,7 @@ int test_load_factor() {
     CD_free(dict);
     return 1;
 
-test_error:
+   test_error:
     return 0;
 }
 int test_update_value() {
@@ -123,7 +123,7 @@ int test_update_value() {
     CD_free(dict);
     return 1;
 
-test_error:
+   test_error:
     return 0;
 }
 int test_delete_key() {
@@ -138,7 +138,7 @@ int test_delete_key() {
     CD_free(dict);
     return 1;
 
-test_error:
+   test_error:
     return 0;
 }
 int test_store_and_retrieve() {
@@ -149,7 +149,7 @@ int test_store_and_retrieve() {
     CD_free(dict);
     return 1;
 
-test_error:
+   test_error:
     return 0;
 }
 
@@ -162,7 +162,7 @@ int test_create_dict() {
     CD_free(dict);
     return 1;
 
-test_error:
+ test_error:
     return 0;
 }
 
@@ -174,7 +174,7 @@ int test_contains() {
     CD_free(dict);
     return 1;
 
-test_error:
+ test_error:
     return 0;
 }
 
