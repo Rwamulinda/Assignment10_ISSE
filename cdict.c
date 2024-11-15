@@ -175,7 +175,8 @@ unsigned int CD_capacity(CDict dict)
 
 bool CD_contains(CDict dict, CDictKeyType key)
 {
-    assert(dict && key);
+    assert(dict);
+    assert(key);
    
     unsigned int index = _CD_hash(key, dict->capacity);
     for (unsigned int i = 0; i < dict->capacity; i++) {
@@ -193,7 +194,9 @@ bool CD_contains(CDict dict, CDictKeyType key)
 
 void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
 {
-    assert(dict && key && value);
+    assert(dict);
+    assert(key);
+    assert(value);
 
     if (CD_load_factor(dict) >= REHASH_THRESHOLD) {
         _CD_rehash(dict);
@@ -227,7 +230,8 @@ void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
 
 CDictValueType CD_retrieve(CDict dict, CDictKeyType key)
 {
-    assert(dict && key);
+    assert(dict);
+    assert(key);
 
     unsigned int index = _CD_hash(key, dict->capacity);
     for (unsigned int i = 0; i < dict->capacity; i++) {
@@ -245,7 +249,8 @@ CDictValueType CD_retrieve(CDict dict, CDictKeyType key)
 
 void CD_delete(CDict dict, CDictKeyType key)
 {
-    assert(dict && key);
+    assert(dict);
+    assert(key);
 
     unsigned int index = _CD_hash(key, dict->capacity);
     for (unsigned int i = 0; i < dict->capacity; i++) {
@@ -299,7 +304,8 @@ void CD_print(CDict dict)
 
 void CD_foreach(CDict dict, CD_foreach_callback callback, void *cb_data)
 {
-    assert(dict && callback);
+    assert(dict);
+    assert(callback);
    
     for (unsigned int i = 0; i < dict->capacity; i++) {
         if (dict->slot[i].status == SLOT_IN_USE) {
