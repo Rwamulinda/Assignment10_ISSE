@@ -83,6 +83,8 @@ static unsigned int _CD_hash(CDictKeyType str, unsigned int capacity)
  * Returns: None
  */
 static void _CD_rehash(CDict dict) {
+    assert(dict);
+    assert(dict->capacity >0);
     unsigned int new_capacity = dict->capacity * 2;
     struct _hash_slot *new_slots = malloc(new_capacity * sizeof(struct _hash_slot));
     if (!new_slots) return;  // Allocation failed, skip rehashing
