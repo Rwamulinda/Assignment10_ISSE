@@ -1,3 +1,4 @@
+
 /*
  * cdict.c
  *
@@ -24,7 +25,7 @@ typedef enum {
     SLOT_IN_USE,
     SLOT_DELETED
 } CDictSlotStatus;
- 
+
 struct _hash_slot {
     CDictSlotStatus status;
     CDictKeyType    key;
@@ -45,12 +46,14 @@ static unsigned int _CD_hash(CDictKeyType str, unsigned int capacity)
 
     if (!str) return 0;  // Handle NULL input
 
+    // Calculate string length
     for (const char *p = str; *p; p++)
         len++;
 
     if (len == 0)
         return 0;
 
+    // Initial hash value
     const char *p = str;
     x = (unsigned int)*p << 7;
 
@@ -175,7 +178,8 @@ unsigned int CD_capacity(CDict dict)
 
 bool CD_contains(CDict dict, CDictKeyType key)
 {
-    assert(dict && key);
+    assert(dict);
+    assert(key);
    
     unsigned int index = _CD_hash(key, dict->capacity);
     for (unsigned int i = 0; i < dict->capacity; i++) {
@@ -193,7 +197,9 @@ bool CD_contains(CDict dict, CDictKeyType key)
 
 void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
 {
-    assert(dict && key && value);
+    assert(dict);
+    assert(key);
+    assert(value);
 
     if (CD_load_factor(dict) >= REHASH_THRESHOLD) {
         _CD_rehash(dict);
@@ -227,7 +233,8 @@ void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
 
 CDictValueType CD_retrieve(CDict dict, CDictKeyType key)
 {
-    assert(dict && key);
+    assert(dict);
+    assert(key);
 
     unsigned int index = _CD_hash(key, dict->capacity);
     for (unsigned int i = 0; i < dict->capacity; i++) {
@@ -245,7 +252,8 @@ CDictValueType CD_retrieve(CDict dict, CDictKeyType key)
 
 void CD_delete(CDict dict, CDictKeyType key)
 {
-    assert(dict && key);
+    assert(dict);
+    assert(key);
 
     unsigned int index = _CD_hash(key, dict->capacity);
     for (unsigned int i = 0; i < dict->capacity; i++) {
@@ -277,29 +285,23 @@ void CD_print(CDict dict)
 {
     assert(dict);
    
-    printf("Dictionary contents (capacity=%u, stored=%u, deleted=%u):\n",
-           dict->capacity, dict->num_stored, dict->num_deleted);
-           
+    printf("Dictionary contents (capacity=%u, stored=%u, deleted=%u):\n", dict->capacity, dict->num_stored, dict->num_deleted);
     for (unsigned int i = 0; i < dict->capacity; i++) {
-        printf("Slot %u: ", i);
-        switch (dict->slot[i].status) {
-            case SLOT_UNUSED:
-                printf("UNUSED\n");
-                break;
-            case SLOT_DELETED:
-                printf("DELETED\n");
-                break;
-            case SLOT_IN_USE:
-                printf("IN USE - Key: %s, Value: %s\n",
-                       dict->slot[i].key, dict->slot[i].value);
-                break;
+        if (dict->slot[i].status == SLOT_IN_USE) {
+            printf("Slot %u: key='%s', value='%s'\n", i, dict->slot[i].key, dict->slot[i].value);
+        } else if (dict->slot[i].status == SLOT_DELETED) {
+            printf("Slot %u: (deleted)\n", i);
+        } else {
+            printf("Slot %u: (empty)\n", i);
         }
     }
 }
 
+
 void CD_foreach(CDict dict, CD_foreach_callback callback, void *cb_data)
 {
-    assert(dict && callback);
+    assert(dict);
+    assert(callback);
    
     for (unsigned int i = 0; i < dict->capacity; i++) {
         if (dict->slot[i].status == SLOT_IN_USE) {
