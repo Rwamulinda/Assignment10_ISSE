@@ -70,11 +70,11 @@ static void _CD_rehash(CDict dict)
     assert(dict);
    
     unsigned int new_capacity = dict->capacity * 2;
-    struct _hash_slot* dict_slots = dict->slot;
+    struct _hash_slot* old_slots = dict->slot;
 
     struct _hash_slot *new_slots = malloc(new_capacity * sizeof(struct _hash_slot));
     if (!new_slots) return;  // Allocation failed, skip rehashing
-
+    
     // Initialize the new slots
     for (unsigned int i = 0; i < new_capacity; i++) {
         new_slots[i].status = SLOT_UNUSED;
@@ -86,17 +86,18 @@ static void _CD_rehash(CDict dict)
     new_slots = NULL;
     free(new_slots);
     dict->num_stored = 0;
+    dict->num_deleted = 0;
+    unsigned int old_capacity = dict->capacity;
+    dict->capacity = new_capacity;
 
     // Reinsert elements from old slots into new slots
-    for (unsigned int i = 0; i < dict->capacity; i++) {
-        if (dict->slot[i].status == SLOT_IN_USE) {
-            CD_store(dict, dict_slots[i].key, dict_slots[i].value);
+    for (unsigned int i = 0; i < old_capacity; i++) {
+        if (old_slots[i].status == SLOT_IN_USE) {
+            CD_store(dict, old_slots[i].key, old_slots[i].value);
         }
     }
 
-    free(dict_slots);
-    dict->capacity = new_capacity;
-    dict->num_deleted = 0;  // Reset deleted count after rehashing
+    free(old_slots);
 }
 
 CDict CD_new()
@@ -193,6 +194,7 @@ void CD_store(CDict dict, CDictKeyType key, CDictValueType value)
     strcmp(dict->slot[probe].key, key) == 0)
     {
       dict->slot[probe].value = value;
+      return;
     } 
     else if(dict->slot[probe].status != SLOT_UNUSED) {
       continue;
@@ -264,14 +266,15 @@ void CD_print(CDict dict)
 {
     assert(dict);
    
-    printf("Dictionary contents (capacity=%u, stored=%u, deleted=%u):\n", dict->capacity, dict->num_stored, dict->num_deleted);
+    printf("Dictionary contents (capacity=%u, stored=%u, deleted=%u load_factor=%.2f):\n", 
+		    dict->capacity, dict->num_stored, dict->num_deleted, CD_load_factor(dict));
     for (unsigned int i = 0; i < dict->capacity; i++) {
         if (dict->slot[i].status == SLOT_IN_USE) {
-            printf("Slot %u: key='%s', value='%s'\n", i, dict->slot[i].key, dict->slot[i].value);
+            printf("Slot %u: key='%s', value='%s'\n", i + 1, dict->slot[i].key, dict->slot[i].value);
         } else if (dict->slot[i].status == SLOT_DELETED) {
-            printf("Slot %u: (deleted)\n", i);
+            printf("Slot %u: DELETED\n", i + 1);
         } else {
-            printf("Slot %u: (empty)\n", i);
+            printf("Slot %u: unused\n", i + 1);
         }
     }
 }

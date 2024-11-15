@@ -76,6 +76,7 @@ int demonstrate_dict()
 
   // add two more elements to force a rehash
   CD_store(dict, "New York", "Knicks");
+  CD_print(dict);
   CD_store(dict, "Miami", "Heat");
 
   printf("After adding New York and Miami:\n");
