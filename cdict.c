@@ -142,10 +142,11 @@ CDict CD_new() {
 
 // Documented in .h file
 void CD_free(CDict dict) {
-    if (dict) {
-        free(dict->slot);
-        free(dict);
-    }
+  assert(dict);
+  if (dict) {
+    free(dict->slot);
+    free(dict);
+  }
 }
 
 
