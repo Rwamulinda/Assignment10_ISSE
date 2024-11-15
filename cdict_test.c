@@ -3,7 +3,7 @@
  * 
  * Test code for ISSE dictionary
  *
- * Author: <your name here>
+ * Author: <Pauline Uwase>
  */
 
 #include <stdio.h>
