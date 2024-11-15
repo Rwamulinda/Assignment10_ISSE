@@ -17,7 +17,7 @@
 #define test_assert(value) {                                            \
     if (!(value)) {                                                     \
       printf("FAIL %s[%d]: %s\n", __FUNCTION__, __LINE__, #value);      \
-      goto test_error;                                                  \
+      return 0;                                                         \
     }                                                                   \
   }
 
@@ -42,27 +42,26 @@ team_data_t team_data[] = { {"Atlanta", "Hawks"}, {"Boston", "Celtics"},
                             {"Toronto", "Raptors"}, {"Utah", "Jazz"},
                             {"Washington", "Wizards"} };
 
-const int team_data_len = sizeof (team_data) / sizeof(team_data[0]);
-
+const int team_data_len = sizeof(team_data) / sizeof(team_data[0]);
 
 /*
  * Demonstrates basic operation of the dictionary. Returns 1 if all
- * tests, pass, 0 otherwise.
+ * tests pass, 0 otherwise.
  */
 int demonstrate_dict()
 {
   CDict dict = CD_new();
 
-  test_assert( CD_size(dict) == 0 );
-  test_assert( CD_load_factor(dict) == 0.0 );
+  test_assert(CD_size(dict) == 0);
+  test_assert(CD_load_factor(dict) == 0.0);
 
   CD_store(dict, "Atlanta", "Hawks");
   CD_store(dict, "Boston", "Celtics");
   CD_store(dict, "Los Angeles", "Lakers");
   CD_store(dict, "Denver", "Nuggets");
-    
+
   printf("The Denver team is called the %s\n", CD_retrieve(dict, "Denver"));
-  printf("  current load factor: %.2f\n", CD_load_factor(dict) );
+  printf("  current load factor: %.2f\n", CD_load_factor(dict));
 
   CD_delete(dict, "Boston");
   printf("  current size: %d\n", CD_size(dict));
@@ -74,22 +73,19 @@ int demonstrate_dict()
   CD_store(dict, "Denver", "Broncos");
   printf("After updating Denver to 'Broncos':\n");
   CD_print(dict);
-  
+
   // add two more elements to force a rehash
   CD_store(dict, "New York", "Knicks");
-  CD_store(dict, "Miami", "Head");
-  
+  CD_store(dict, "Miami", "Heat");
+
   printf("After adding New York and Miami:\n");
   CD_print(dict);
 
   CD_free(dict);
-  
-  return 1;
 
- test_error:
-  CD_free(dict);
-  return 0;
+  return 1;
 }
+
 int test_print() {
     CDict dict = CD_new();
     CD_store(dict, "Atlanta", "Hawks");
@@ -100,10 +96,8 @@ int test_print() {
     CD_print(dict);
     CD_free(dict);
     return 1;
-
-   test_error:
-    return 0;
 }
+
 int test_load_factor() {
     CDict dict = CD_new();
     test_assert(CD_load_factor(dict) == 0.0);
@@ -111,10 +105,8 @@ int test_load_factor() {
     test_assert(CD_load_factor(dict) > 0.0);
     CD_free(dict);
     return 1;
-
-   test_error:
-    return 0;
 }
+
 int test_update_value() {
     CDict dict = CD_new();
     CD_store(dict, "Atlanta", "Hawks");
@@ -122,10 +114,8 @@ int test_update_value() {
     test_assert(strcmp(CD_retrieve(dict, "Atlanta"), "Falcons") == 0);
     CD_free(dict);
     return 1;
-
-   test_error:
-    return 0;
 }
+
 int test_delete_key() {
     CDict dict = CD_new();
     CD_store(dict, "Atlanta", "Hawks");
@@ -133,24 +123,20 @@ int test_delete_key() {
     test_assert(CD_size(dict) == 2);
     CD_delete(dict, "Atlanta");
     test_assert(CD_size(dict) == 1);
-    test_assert(strcmp(CD_retrieve(dict, "Atlanta"), INVALID_VALUE) == 0);
+    const char* retrieved = CD_retrieve(dict, "Atlanta");
+    test_assert(retrieved == NULL);  // Handling invalid retrieval
     test_assert(strcmp(CD_retrieve(dict, "Boston"), "Celtics") == 0);
     CD_free(dict);
     return 1;
-
-   test_error:
-    return 0;
 }
+
 int test_store_and_retrieve() {
     CDict dict = CD_new();
     CD_store(dict, "Atlanta", "Hawks");
     test_assert(strcmp(CD_retrieve(dict, "Atlanta"), "Hawks") == 0);
-    test_assert(strcmp(CD_retrieve(dict, "Boston"), INVALID_VALUE) == 0);
+    test_assert(CD_retrieve(dict, "Boston") == NULL);  // Check for NULL when not found
     CD_free(dict);
     return 1;
-
-   test_error:
-    return 0;
 }
 
 int test_create_dict() {
@@ -161,9 +147,6 @@ int test_create_dict() {
     test_assert(CD_load_factor(dict) == 0.0);
     CD_free(dict);
     return 1;
-
- test_error:
-    return 0;
 }
 
 int test_contains() {
@@ -173,9 +156,6 @@ int test_contains() {
     test_assert(!CD_contains(dict, "Boston"));
     CD_free(dict);
     return 1;
-
- test_error:
-    return 0;
 }
 
 int main()
@@ -190,12 +170,7 @@ int main()
   num_tests++; passed += test_update_value();
   num_tests++; passed += test_load_factor();
   num_tests++; passed += test_contains();
-  //num_tests++; passed += test_rehashing();
-  num_tests++; passed += test_print(); 
-
-  //
-  // TODO: Add your code here
-  //
+  num_tests++; passed += test_print();
 
   printf("Passed %d/%d test cases\n", passed, num_tests);
   fflush(stdout);
